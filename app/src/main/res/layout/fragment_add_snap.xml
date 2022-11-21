@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    tools:context=".AddSnap">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="15">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp">
+
+            <EditText
+                android:id="@+id/snap_title_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter a title"
+                android:layout_marginTop="20dp"/>
+
+            <ImageView
+                android:layout_marginTop="20dp"
+                android:id="@+id/snap_image_preview"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="#0f0f0f0f"
+                android:padding="1dp"
+                android:src="@drawable/fridge_preview"/>
+            <Button
+                android:layout_marginTop="20dp"
+                android:id="@+id/image_picker_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pick photo"
+                android:textAllCaps="false"/>
+
+            <EditText
+                android:layout_marginTop="20dp"
+                android:id="@+id/snap_comment_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Type a commentary"
+                android:inputType="text|textMultiLine"
+                android:maxLines="6"
+                android:scrollbars="vertical" />
+        </LinearLayout>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/save_snap_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:text="Add Snap"
+        android:textAllCaps="false" />
+</LinearLayout>

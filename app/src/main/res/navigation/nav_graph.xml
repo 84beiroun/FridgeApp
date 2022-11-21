@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/listFragment">
+    <fragment
+        android:id="@+id/listFragment"
+        android:name="com.example.fridgeapp.ListFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_list" >
+        <action
+            android:id="@+id/action_listFragment_to_cardExpanded"
+            app:destination="@id/cardExpanded"
+            app:enterAnim="@anim/anim_swipe_bot_to_top"
+            app:popExitAnim="@anim/anim_swipe_top_to_bot" />
+        <action
+            android:id="@+id/action_listFragment_to_addSnap"
+            app:destination="@id/addSnap"
+            app:enterAnim="@anim/anim_swipe_left_to_right"
+            app:popExitAnim="@anim/anim_swipe_right_to_left" />
+    </fragment>
+    <fragment
+        android:id="@+id/cardExpanded"
+        android:name="com.example.fridgeapp.CardExpanded"
+        android:label="Fridge Snap"
+        tools:layout="@layout/fragment_card_expanded" >
+        <action
+            android:id="@+id/action_cardExpanded_to_listFragment"
+            app:destination="@id/listFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/addSnap"
+        android:name="com.example.fridgeapp.AddSnap"
+        android:label="Add a Snap"
+        tools:layout="@layout/fragment_add_snap" >
+        <action
+            android:id="@+id/action_addSnap_to_listFragment"
+            app:destination="@id/listFragment" />
+    </fragment>
+</navigation>
