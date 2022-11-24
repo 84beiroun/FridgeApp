@@ -6,7 +6,7 @@
     app:startDestination="@id/listFragment">
     <fragment
         android:id="@+id/listFragment"
-        android:name="com.example.fridgeapp.ListFragment"
+        android:name="com.example.fridgeapp.view.ListFragment"
         android:label="Home"
         tools:layout="@layout/fragment_list" >
         <action
@@ -22,7 +22,7 @@
     </fragment>
     <fragment
         android:id="@+id/cardExpanded"
-        android:name="com.example.fridgeapp.CardExpanded"
+        android:name="com.example.fridgeapp.view.CardExpanded"
         android:label="Fridge Snap"
         tools:layout="@layout/fragment_card_expanded" >
         <action
@@ -31,7 +31,7 @@
     </fragment>
     <fragment
         android:id="@+id/addSnap"
-        android:name="com.example.fridgeapp.AddSnap"
+        android:name="com.example.fridgeapp.view.AddSnap"
         android:label="Add a Snap"
         tools:layout="@layout/fragment_add_snap" >
         <action

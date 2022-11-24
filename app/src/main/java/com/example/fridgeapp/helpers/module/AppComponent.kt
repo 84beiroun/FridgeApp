@@ -1,10 +1,10 @@
 package com.example.fridgeapp.helpers.module
 
 import android.app.Application
-import com.example.fridgeapp.AddSnap
-import com.example.fridgeapp.CardExpanded
-import com.example.fridgeapp.ListFragment
-import com.example.fridgeapp.MainActivity
+import com.example.fridgeapp.view.AddSnap
+import com.example.fridgeapp.view.CardExpanded
+import com.example.fridgeapp.view.ListFragment
+import com.example.fridgeapp.view.MainActivity
 import com.example.fridgeapp.helpers.data.FridgeSnapDao
 import com.example.fridgeapp.helpers.repository.FridgeSnapsDB
 import dagger.Component
