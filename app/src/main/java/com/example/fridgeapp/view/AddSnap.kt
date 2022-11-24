@@ -16,9 +16,9 @@ import androidx.navigation.fragment.findNavController
 import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
 import com.example.fridgeapp.databinding.FragmentAddSnapBinding
-import com.example.fridgeapp.helpers.FridgeApp
-import com.example.fridgeapp.helpers.data.FridgeSnap
-import com.example.fridgeapp.helpers.repository.SnapsRepository
+import com.example.fridgeapp.loaders.FridgeApp
+import com.example.fridgeapp.data.FridgeSnap
+import com.example.fridgeapp.injector.repository.SnapsRepository
 import kotlinx.coroutines.*
 import java.io.File
 import java.text.SimpleDateFormat

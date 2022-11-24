@@ -11,10 +11,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fridgeapp.R
 import com.example.fridgeapp.databinding.FragmentListBinding
-import com.example.fridgeapp.helpers.FridgeApp
-import com.example.fridgeapp.helpers.RecycleAdapter
-import com.example.fridgeapp.helpers.data.FridgeSnap
-import com.example.fridgeapp.helpers.repository.SnapsRepository
+import com.example.fridgeapp.loaders.FridgeApp
+import com.example.fridgeapp.handlers.RecycleAdapter
+import com.example.fridgeapp.data.FridgeSnap
+import com.example.fridgeapp.injector.repository.SnapsRepository
 import kotlinx.coroutines.*
 import javax.inject.Inject
 

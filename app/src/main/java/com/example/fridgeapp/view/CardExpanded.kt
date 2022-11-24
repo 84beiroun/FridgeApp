@@ -19,9 +19,9 @@ import androidx.fragment.app.Fragment
 import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
 import com.example.fridgeapp.databinding.FragmentCardExpandedBinding
-import com.example.fridgeapp.helpers.FridgeApp
-import com.example.fridgeapp.helpers.data.FridgeSnap
-import com.example.fridgeapp.helpers.repository.SnapsRepository
+import com.example.fridgeapp.loaders.FridgeApp
+import com.example.fridgeapp.data.FridgeSnap
+import com.example.fridgeapp.injector.repository.SnapsRepository
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
