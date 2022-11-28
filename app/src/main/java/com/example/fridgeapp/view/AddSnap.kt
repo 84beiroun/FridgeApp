@@ -78,14 +78,11 @@ class AddSnap : Fragment() {
         if (binding.snapTitleInput.text.isNotEmpty()) {
             GlobalScope.launch(Dispatchers.IO) {
                 var commentText = binding.snapCommentInput.text.toString()
-                var id = 0
                 if (commentText.isEmpty()) commentText = "No commentary was provided..."
-
-                if (snapsRepository.getAll().isNotEmpty()) id = snapsRepository.getAll().size
 
                 snapsRepository.insertSnap(
                     FridgeSnap(
-                        id = id,
+                        id = 0,
                         title = binding.snapTitleInput.text.toString(),
                         comment = commentText,
                         time = LocalDateTime.now().format(
@@ -169,6 +166,10 @@ class AddSnap : Fragment() {
         menu.clear()
         inflater.inflate(R.menu.menu_add, menu)
         super.onCreateOptionsMenu(menu, inflater)
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
 

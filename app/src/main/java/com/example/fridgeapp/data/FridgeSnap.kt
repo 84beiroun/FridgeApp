@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
 //на самом деле просто имплимент был parcelable, так как в бандл нельзя передавать обычные списки
 @Entity
 data class FridgeSnap(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int,
     @ColumnInfo(name = "title") val title: String?,
     @ColumnInfo(name = "comment") val comment: String?,
     @ColumnInfo(name = "date") val date: String?,

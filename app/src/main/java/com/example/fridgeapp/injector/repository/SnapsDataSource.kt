@@ -8,9 +8,9 @@ import javax.inject.Inject
 class SnapsDataSource @Inject constructor(
     private val fridgeSnapDao: FridgeSnapDao
 ) : SnapsRepository {
-    override suspend fun getAll() = fridgeSnapDao.getAll()
+    override fun getAll() = fridgeSnapDao.getAll()
     override suspend fun loadById(id: Int) = fridgeSnapDao.loadById(id)
     override suspend fun insertSnap(fridgeSnap: FridgeSnap) = fridgeSnapDao.insertSnap(fridgeSnap)
-    override suspend fun deleteSnap(fridgeSnap: FridgeSnap) = fridgeSnapDao.deleteSnap(fridgeSnap)
+    override suspend fun deleteSnap(id: Int) = fridgeSnapDao.deleteSnap(id)
     override suspend fun updateSnap(fridgeSnap: FridgeSnap) = fridgeSnapDao.updateSnap(fridgeSnap)
 }

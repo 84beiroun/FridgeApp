@@ -6,7 +6,7 @@ import com.example.fridgeapp.data.FridgeSnap
 import com.example.fridgeapp.handlers.FridgeSnapDao
 
 //сама бд
-@Database(entities = [FridgeSnap::class], version = 6)
+@Database(entities = [FridgeSnap::class], version = 7)
 abstract class FridgeSnapsDB : RoomDatabase() {
     abstract fun getDao(): FridgeSnapDao
 }

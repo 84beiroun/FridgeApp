@@ -42,7 +42,8 @@ class RecycleAdapter(private val snapsList: List<FridgeSnap>) :
         else holder.previewImage.setImageResource(R.drawable.fridge_small_preview)
 
         holder.cardTitle.text = fridgeSnap.title
-        holder.cardID.text = (fridgeSnap.id + 1).toString()
+       // holder.cardID.text = (fridgeSnap.id + 1).toString()
+        holder.cardID.text = (position + 1).toString()
         holder.cardDate.text = fridgeSnap.date + " " + fridgeSnap.time
     }
 

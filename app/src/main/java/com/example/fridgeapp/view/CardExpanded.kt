@@ -16,22 +16,18 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
-import com.example.fridgeapp.databinding.FragmentCardExpandedBinding
-import com.example.fridgeapp.loaders.FridgeApp
 import com.example.fridgeapp.data.FridgeSnap
+import com.example.fridgeapp.databinding.FragmentCardExpandedBinding
 import com.example.fridgeapp.injector.repository.SnapsRepository
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.example.fridgeapp.loaders.FridgeApp
+import kotlinx.coroutines.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
-
-//инфа с бандла (экземпляр записи)
-private const val BUNDLE_POINTER = "snapBundlePointer"
 
 //раскрытая запись
 class CardExpanded : Fragment() {
@@ -56,9 +52,8 @@ class CardExpanded : Fragment() {
     //ради 2 классов не стал, просто скопировал, особенно 1 в 1 скопировано было, конечно же, обновление изображения
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            fridgeSnap = it.getParcelable(BUNDLE_POINTER)
-        }
+        //получаем инфу с навигатора (safeargs)
+        fridgeSnap = CardExpandedArgs.fromBundle(requireArguments()).fridgeSnap
         setHasOptionsMenu(true)
 
         //хэндлим обращение к андройду, загрузка картинок
@@ -74,10 +69,20 @@ class CardExpanded : Fragment() {
     }
 
     //хэнндлим кнопки меню
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.snap_edit -> {
             //функция анлока полей
             fieldsUnlockHandler()
+            true
+        }
+        R.id.delete_snap -> {
+            GlobalScope.launch(Dispatchers.IO) {
+                snapsRepository.deleteSnap(fridgeSnap?.id!!)
+                withContext(Dispatchers.Main) {
+                    findNavController().popBackStack()
+                }
+            }
             true
         }
         else -> super.onOptionsItemSelected(item)
@@ -169,6 +174,11 @@ class CardExpanded : Fragment() {
                 binding.snapImage.setImageURI(actualImage)
             } else Log.d("EXPANDED_CARD", "Can't handle Take Photo")
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     //хэндлер выключения всех элементов (на вывод)
