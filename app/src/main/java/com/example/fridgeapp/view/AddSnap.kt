@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.*
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,11 +16,13 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
-import com.example.fridgeapp.databinding.FragmentAddSnapBinding
-import com.example.fridgeapp.loaders.FridgeApp
 import com.example.fridgeapp.data.FridgeSnap
+import com.example.fridgeapp.databinding.FragmentAddSnapBinding
 import com.example.fridgeapp.injector.repository.SnapsRepository
-import kotlinx.coroutines.*
+import com.example.fridgeapp.loaders.FridgeApp
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.DelicateCoroutinesApi
 import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -73,31 +76,50 @@ class AddSnap : Fragment() {
     }
 
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun toSave() {
         if (binding.snapTitleInput.text.isNotEmpty()) {
-            GlobalScope.launch(Dispatchers.IO) {
-                var commentText = binding.snapCommentInput.text.toString()
-                if (commentText.isEmpty()) commentText = "No commentary was provided..."
-
-                snapsRepository.insertSnap(
-                    FridgeSnap(
-                        id = 0,
-                        title = binding.snapTitleInput.text.toString(),
-                        comment = commentText,
-                        time = LocalDateTime.now().format(
-                            DateTimeFormatter.ofPattern("hh:mm a")
-                        ),
-                        date = LocalDateTime.now().format(
-                            DateTimeFormatter.ofPattern("dd MMM")
-                        ),
-                        image = actualImage.toString()
-                    )
+            var commentText = binding.snapCommentInput.text.toString()
+            if (commentText.isEmpty()) commentText = "default_comment_line"
+            snapsRepository.insertSnap(
+                FridgeSnap(
+                    id = 0,
+                    title = binding.snapTitleInput.text.toString(),
+                    comment = commentText,
+                    time = LocalDateTime.now().format(
+                        DateTimeFormatter.ofPattern("hh:mm a")
+                    ),
+                    date = LocalDateTime.now().format(
+                        DateTimeFormatter.ofPattern("dd MMM")
+                    ),
+                    image = actualImage.toString()
                 )
-                withContext(Dispatchers.Main) {
+            ).observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe({
+                    Log.d(
+                        "ITEM_ADD",
+                        "Item (name = ${binding.snapTitleInput.text}) has been updated"
+                    )
                     findNavController().popBackStack()
-                }
-            }
+                    Toast.makeText(
+                        this@AddSnap.context,
+                        "Item has been added!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+                    { error ->
+                        Log.d(
+                            "ERROR",
+                            "Cannot add item (name = ${binding.snapTitleInput.text}). Code: $error"
+                        )
+                        Toast.makeText(
+                            this@AddSnap.context,
+                            "Failed to add item!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    })
+
+
         }
     }
 
@@ -167,6 +189,7 @@ class AddSnap : Fragment() {
         inflater.inflate(R.menu.menu_add, menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

@@ -1,18 +1,16 @@
 package com.example.fridgeapp.injector.repository
 
 import com.example.fridgeapp.data.FridgeSnap
+import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.reactivex.Observable
 
 //репозиторий функций дао бд
 interface SnapsRepository {
     fun getAll(): Flowable<List<FridgeSnap>>
 
-    suspend fun loadById(id: Int): FridgeSnap
+    fun insertSnap(fridgeSnap: FridgeSnap) : Completable
 
-    suspend fun insertSnap(fridgeSnap: FridgeSnap)
+    fun deleteSnap(id: Int) : Completable
 
-    suspend fun deleteSnap(id: Int)
-
-    suspend fun updateSnap(fridgeSnap: FridgeSnap)
+    fun updateSnap(fridgeSnap: FridgeSnap): Completable
 }

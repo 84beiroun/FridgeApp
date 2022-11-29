@@ -2,6 +2,7 @@ package com.example.fridgeapp.handlers
 
 import androidx.room.*
 import com.example.fridgeapp.data.FridgeSnap
+import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Observable
 
@@ -11,15 +12,12 @@ interface FridgeSnapDao {
     @Query("SELECT * FROM FridgeSnap")
     fun getAll(): Flowable<List<FridgeSnap>>
 
-    @Query("SELECT * FROM FridgeSnap WHERE id LIKE :id")
-    suspend fun loadById(id: Int): FridgeSnap
-
     @Insert
-    suspend fun insertSnap(fridgeSnap: FridgeSnap)
+    fun insertSnap(fridgeSnap: FridgeSnap) : Completable
 
     @Query("DELETE FROM FridgeSnap WHERE id LIKE :id")
-    suspend fun deleteSnap(id: Int)
+    fun deleteSnap(id: Int) : Completable
 
     @Update
-    suspend fun updateSnap(fridgeSnap: FridgeSnap)
+    fun updateSnap(fridgeSnap: FridgeSnap) : Completable
 }
