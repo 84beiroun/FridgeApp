@@ -9,56 +9,69 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_weight="15">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
+            android:layout_height="0dp"
             android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp">
+            android:layout_marginRight="20dp"
+            android:orientation="vertical">
 
-            <EditText
-                android:id="@+id/snap_title_input"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter a title"
-                android:layout_marginTop="20dp"/>
+                android:layout_marginTop="20dp"
+                android:hint="@string/snap_title">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/snap_title_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <ImageView
-                android:layout_marginTop="20dp"
                 android:id="@+id/snap_image_preview"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
+                android:layout_marginTop="20dp"
                 android:background="#0f0f0f0f"
                 android:padding="1dp"
-                android:src="@drawable/fridge_preview"/>
-            <Button
-                android:layout_marginTop="20dp"
+                android:src="@drawable/fridge_preview" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/image_picker_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Pick photo"
-                android:textAllCaps="false"/>
-
-            <EditText
                 android:layout_marginTop="20dp"
-                android:id="@+id/snap_comment_input"
+                android:text="@string/pick_photo"
+                android:textAllCaps="false" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Type a commentary"
+                android:layout_marginTop="20dp"
+                android:hint="@string/your_commentary"
                 android:inputType="text|textMultiLine"
                 android:maxLines="6"
-                android:scrollbars="vertical" />
+                android:scrollbars="vertical">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/snap_comment_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
     </ScrollView>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/save_snap_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:text="Add Snap"
+        android:text="@string/add_snap"
         android:textAllCaps="false" />
 </LinearLayout>

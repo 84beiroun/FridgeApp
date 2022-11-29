@@ -2,4 +2,14 @@
     <string name="app_name">FridgeApp</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="add_snap">Add Snap</string>
+    <string name="your_commentary">Your commentary</string>
+    <string name="pick_photo">Pick photo</string>
+    <string name="snap_title">Snap title</string>
+    <string name="change_image">Change Image</string>
+    <string name="edit_snap">Edit Snap</string>
+    <string name="first_launch_text">No items, as it seems...</string>
+    <string name="item_title_default">Item Title</string>
+    <string name="item_date_default">Item Date</string>
+    <string name="id_default">ID</string>
 </resources>

@@ -19,7 +19,7 @@
         tools:listitem="@layout/card_fridge_snap"/>
     <TextView
         android:id="@+id/first_launch_text"
-        android:text="No items, as it seems..."
+        android:text="@string/first_launch_text"
         android:textSize="25sp"
         android:layout_gravity="center"
         android:visibility="invisible"

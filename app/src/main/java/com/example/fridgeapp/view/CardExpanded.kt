@@ -231,13 +231,11 @@ class CardExpanded : Fragment() {
         binding.snapTitleOutput.isFocusable = false
         binding.snapTitleOutput.isClickable = false
         binding.snapTitleOutput.isCursorVisible = false
-        binding.snapTitleOutput.background = null
         binding.snapTitleOutput.setTextIsSelectable(false)
 
         binding.snapCommentOutput.isFocusable = false
         binding.snapCommentOutput.isClickable = false
         binding.snapCommentOutput.isCursorVisible = false
-        binding.snapCommentOutput.background = null
         binding.snapCommentOutput.setTextIsSelectable(false)
 
         binding.saveSnapEditButton.isVisible = false
@@ -253,13 +251,11 @@ class CardExpanded : Fragment() {
         binding.snapTitleOutput.isClickable = true
         binding.snapTitleOutput.isCursorVisible = true
         binding.snapTitleOutput.setTextIsSelectable(true)
-        binding.snapTitleOutput.setBackgroundResource(androidx.appcompat.R.drawable.abc_edit_text_material)
 
         binding.snapCommentOutput.isFocusable = true
         binding.snapCommentOutput.isClickable = true
         binding.snapCommentOutput.isCursorVisible = true
         binding.snapCommentOutput.setTextIsSelectable(true)
-        binding.snapCommentOutput.setBackgroundResource(androidx.appcompat.R.drawable.abc_edit_text_material)
 
         binding.saveSnapEditButton.isEnabled = true
         binding.saveSnapEditButton.isVisible = true

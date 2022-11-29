@@ -22,7 +22,9 @@ import com.example.fridgeapp.injector.repository.SnapsRepository
 import com.example.fridgeapp.loaders.FridgeApp
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -77,7 +79,7 @@ class AddSnap : Fragment() {
 
 
     private fun toSave() {
-        if (binding.snapTitleInput.text.isNotEmpty()) {
+        if (binding.snapTitleInput.text!!.isNotEmpty()) {
             var commentText = binding.snapCommentInput.text.toString()
             if (commentText.isEmpty()) commentText = "default_comment_line"
             snapsRepository.insertSnap(

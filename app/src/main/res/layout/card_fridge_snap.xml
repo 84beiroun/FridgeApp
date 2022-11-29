@@ -31,8 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:layout_marginLeft="15dp"
-            android:text="Item Title"
+            android:text="@string/item_title_default"
             android:textSize="20sp"
             android:textStyle="bold" />
             <LinearLayout
@@ -44,22 +43,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
-                android:layout_marginLeft="15dp"
-                android:text="Item Date"
+                android:text="@string/item_date_default"
                 android:textSize="18sp"
                 android:textStyle="normal"
-                android:layout_gravity="left"
+                android:layout_gravity="start"
                 android:layout_weight="15"/>
                 <TextView
                     android:id="@+id/card_id"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
-                    android:layout_marginLeft="15dp"
-                    android:text="ID"
+                    android:text="@string/id_default"
                     android:textSize="18sp"
                     android:textStyle="normal"
-                    android:layout_gravity="right"
+                    android:layout_gravity="end"
                     android:layout_weight="1"/>
 
             </LinearLayout>
