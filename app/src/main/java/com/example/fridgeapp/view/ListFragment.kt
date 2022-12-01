@@ -6,11 +6,15 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.fridgeapp.R
 import com.example.fridgeapp.data.FridgeSnap
 import com.example.fridgeapp.databinding.FragmentListBinding
+import com.example.fridgeapp.helpers.ItemsDivider
 import com.example.fridgeapp.handlers.RecycleAdapter
 import com.example.fridgeapp.injector.repository.SnapsRepository
 import com.example.fridgeapp.loaders.FridgeApp
@@ -48,6 +52,11 @@ class ListFragment : Fragment() {
         layoutManager.stackFromEnd = true
         binding.fridgeItemsList.layoutManager = layoutManager
         binding.fridgeItemsList.adapter = adapter
+
+        val dividerItemDecoration = ItemsDivider(this@ListFragment.context, RecyclerView.VERTICAL)
+        dividerItemDecoration.setDrawable(ContextCompat.getDrawable(this@ListFragment.context!!, R.drawable.item_divider)!!)
+        binding.fridgeItemsList.addItemDecoration(dividerItemDecoration)
+
         return binding.root
     }
 
@@ -71,7 +80,7 @@ class ListFragment : Fragment() {
                 if (_binding != null) {
                     binding.loadingSpinner.visibility = View.INVISIBLE
                     binding.firstLaunchText.visibility = View.VISIBLE
-                    binding.firstLaunchText.text = "Ошибка... А точнее: $error"
+                    binding.firstLaunchText.text = getString(R.string.list_error_msg) + error
                 }
             })
     }

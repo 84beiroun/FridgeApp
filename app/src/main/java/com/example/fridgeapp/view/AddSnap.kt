@@ -12,6 +12,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.fridgeapp.BuildConfig
@@ -22,9 +24,6 @@ import com.example.fridgeapp.injector.repository.SnapsRepository
 import com.example.fridgeapp.loaders.FridgeApp
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -53,7 +52,7 @@ class AddSnap : Fragment() {
 
     private var actualImage: Uri? = null
 
-    lateinit var currentPhotoPath: String
+    private lateinit var currentPhotoPath: String
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -63,7 +62,18 @@ class AddSnap : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sysImageSelector()
-        setHasOptionsMenu(true)
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menu.clear()
+                menuInflater.inflate(R.menu.menu_add, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                //здесь буквально нет ничего
+                return false
+            }
+        })
     }
 
     override fun onCreateView(
@@ -95,9 +105,7 @@ class AddSnap : Fragment() {
                     ),
                     image = actualImage.toString()
                 )
-            ).observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe({
+            ).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe({
                     Log.d(
                         "ITEM_ADD",
                         "Item (name = ${binding.snapTitleInput.text}) has been updated"
@@ -105,21 +113,20 @@ class AddSnap : Fragment() {
                     findNavController().popBackStack()
                     Toast.makeText(
                         this@AddSnap.context,
-                        "Item has been added!",
+                        getString(R.string.item_add_successful),
                         Toast.LENGTH_SHORT
                     ).show()
-                },
-                    { error ->
-                        Log.d(
-                            "ERROR",
-                            "Cannot add item (name = ${binding.snapTitleInput.text}). Code: $error"
-                        )
-                        Toast.makeText(
-                            this@AddSnap.context,
-                            "Failed to add item!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    })
+                }, { error ->
+                    Log.d(
+                        "ERROR",
+                        "Cannot add item (name = ${binding.snapTitleInput.text}). Code: $error"
+                    )
+                    Toast.makeText(
+                        this@AddSnap.context,
+                        getString(R.string.item_add_failed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                })
 
 
         }
@@ -130,7 +137,12 @@ class AddSnap : Fragment() {
             if (uri != null) {
                 actualImage = uri
                 binding.snapImagePreview.setImageURI(actualImage)
-            } else Log.d("ADD_SNAP", "Can't handle Pick Media")
+            } else {
+                Log.d("ADD_SNAP", "Can't handle Pick Media")
+                Toast.makeText(
+                    this@AddSnap.context, getString(R.string.pick_media_failed), Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         takenImage = registerForActivityResult(
@@ -139,7 +151,12 @@ class AddSnap : Fragment() {
             if (code) {
                 Log.d("path", actualImage.toString())
                 binding.snapImagePreview.setImageURI(actualImage)
-            } else Log.d("ADD_SNAP", "Can't handle Take Photo")
+            } else {
+                Log.d("ADD_SNAP", "Can't handle Take Photo")
+                Toast.makeText(
+                    this@AddSnap.context, getString(R.string.photo_take_failed), Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
@@ -186,11 +203,6 @@ class AddSnap : Fragment() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        menu.clear()
-        inflater.inflate(R.menu.menu_add, menu)
-        super.onCreateOptionsMenu(menu, inflater)
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()

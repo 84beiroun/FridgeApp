@@ -15,6 +15,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -43,12 +45,13 @@ class CardExpanded : Fragment() {
 
     private var actualImage: Uri? = null
 
-    lateinit var currentPhotoPath: String
+    private lateinit var currentPhotoPath: String
 
     @Inject
     lateinit var snapsRepository: SnapsRepository
 
     private val binding get() = _binding!!
+
 
     //раскрытая запись очень похожа на создание новой, так как тут update, методы оттуда же перекочевали, делать интерфейс
     //ради 2 классов не стал, просто скопировал, особенно 1 в 1 скопировано было, конечно же, обновление изображения
@@ -56,58 +59,55 @@ class CardExpanded : Fragment() {
         super.onCreate(savedInstanceState)
         //получаем инфу с навигатора (safeargs)
         fridgeSnap = CardExpandedArgs.fromBundle(requireArguments()).fridgeSnap
-        setHasOptionsMenu(true)
 
         //хэндлим обращение к андройду, загрузка картинок
         sysImageSelector()
 
-    }
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.menu_snap, menu)
+            }
 
-    //добавляем меню
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        menu.clear()
-        inflater.inflate(R.menu.menu_snap, menu)
-        super.onCreateOptionsMenu(menu, inflater)
-    }
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.snap_edit -> {
+                        //функция анлока полей
+                        fieldsUnlockHandler()
+                        true
+                    }
+                    R.id.delete_snap -> {
+                        snapsRepository.deleteSnap(fridgeSnap?.id!!)
+                            .observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io())
+                            .subscribe({
+                                Log.d(
+                                    "ITEM_DELETE",
+                                    "Item (name = ${fridgeSnap?.title!!}) has been deleted"
+                                )
+                                findNavController().popBackStack()
+                                Toast.makeText(
+                                    this@CardExpanded.context,
+                                    getString(R.string.item_delete_successful),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }, { error ->
+                                Log.d(
+                                    "ERROR",
+                                    "Cannot delete item (name = ${fridgeSnap?.title!!}). Code: $error"
+                                )
+                                Toast.makeText(
+                                    this@CardExpanded.context,
+                                    getString(R.string.item_delete_failed),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            })
+                        true
+                    }
+                    else -> false
+                }
+            }
 
-    //хэнндлим кнопки меню
-    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.snap_edit -> {
-            //функция анлока полей
-            fieldsUnlockHandler()
-            true
-        }
-        R.id.delete_snap -> {
-            snapsRepository.deleteSnap(fridgeSnap?.id!!)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe({
-                    Log.d(
-                        "ITEM_DELETE",
-                        "Item (name = ${fridgeSnap?.title!!}) has been deleted"
-                    )
-                    findNavController().popBackStack()
-                    Toast.makeText(
-                        this@CardExpanded.context,
-                        "Item has been deleted!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                },
-                    { error ->
-                        Log.d(
-                            "ERROR",
-                            "Cannot delete item (name = ${fridgeSnap?.title!!}). Code: $error"
-                        )
-                        Toast.makeText(
-                            this@CardExpanded.context,
-                            "Failed to delete item!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    })
-
-            true
-        }
-        else -> super.onOptionsItemSelected(item)
+        })
     }
 
     override fun onAttach(context: Context) {
@@ -151,10 +151,9 @@ class CardExpanded : Fragment() {
 
     private fun toUpdate() {
         if (binding.snapTitleOutput.text != null) {
-            val comment: String
-            if (binding.snapCommentOutput.text != null) comment =
-                binding.snapCommentOutput.text.toString()
-            else comment = "null"
+            val comment: String =
+                if (binding.snapCommentOutput.text != null) binding.snapCommentOutput.text.toString()
+                else "null"
             snapsRepository.updateSnap(
                 FridgeSnap(
                     id = fridgeSnap?.id!!,
@@ -164,40 +163,34 @@ class CardExpanded : Fragment() {
                     comment = comment,
                     image = actualImage.toString()
                 )
-            )
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe({
-                    Log.d(
-                        "ITEM_UPDATE",
-                        "Item (name = ${fridgeSnap?.title!!}) has been updated"
-                    )
-                    Toast.makeText(
-                        this@CardExpanded.context,
-                        "Item has been updated!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                },
-                    { error ->
-                        Log.d(
-                            "ERROR",
-                            "Cannot update item (name = ${fridgeSnap?.title!!}). Code: $error"
-                        )
-                        Toast.makeText(
-                            this@CardExpanded.context,
-                            "Failed to update item!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    })
+            ).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe({
+                Log.d(
+                    "ITEM_UPDATE", "Item (name = ${fridgeSnap?.title!!}) has been updated"
+                )
+                Toast.makeText(
+                    this@CardExpanded.context,
+                    getString(R.string.item_edit_successful),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }, { error ->
+                Log.d(
+                    "ERROR", "Cannot update item (name = ${fridgeSnap?.title!!}). Code: $error"
+                )
+                Toast.makeText(
+                    this@CardExpanded.context,
+                    getString(R.string.item_edit_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            })
         }
     }
 
     private fun fieldsInit() {
         binding.snapTitleOutput.setText(fridgeSnap?.title)
-        if (fridgeSnap?.comment == "default_comment_line" || fridgeSnap?.comment?.length == 0)
-            binding.snapCommentOutput.setText("No commentary was provided...")
-        else
-            binding.snapCommentOutput.setText(fridgeSnap?.comment)
+        if (fridgeSnap?.comment == "default_comment_line" || fridgeSnap?.comment?.length == 0) binding.snapCommentOutput.setText(
+            "No commentary was provided..."
+        )
+        else binding.snapCommentOutput.setText(fridgeSnap?.comment)
         if (fridgeSnap?.image != "null") binding.snapImage.setImageURI(fridgeSnap?.image?.toUri())
         else binding.snapImage.setImageResource(R.drawable.fridge_preview)
     }
@@ -208,7 +201,14 @@ class CardExpanded : Fragment() {
             if (uri != null) {
                 actualImage = uri
                 binding.snapImage.setImageURI(actualImage)
-            } else Log.d("EXPANDED_CARD", "Can't handle Pick Media")
+            } else {
+                Log.d("ADD_SNAP", "Can't handle Pick Media")
+                Toast.makeText(
+                    this@CardExpanded.context,
+                    getString(R.string.pick_media_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         //контракт нового фото
@@ -217,7 +217,14 @@ class CardExpanded : Fragment() {
         ) { code ->
             if (code) {
                 binding.snapImage.setImageURI(actualImage)
-            } else Log.d("EXPANDED_CARD", "Can't handle Take Photo")
+            } else {
+                Log.d("ADD_SNAP", "Can't handle Take Photo")
+                Toast.makeText(
+                    this@CardExpanded.context,
+                    getString(R.string.photo_take_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
@@ -264,8 +271,7 @@ class CardExpanded : Fragment() {
         binding.changeImageTxt.isEnabled = true
 
         Log.d("sdsd", fridgeSnap.toString())
-        if (fridgeSnap?.comment == "default_comment_line")
-            binding.snapCommentOutput.text = null
+        if (fridgeSnap?.comment == "default_comment_line") binding.snapCommentOutput.text = null
     }
 
     //метод выбора действия
