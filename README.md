@@ -1,9 +1,14 @@
 # FridgeApp
-A little nice app for list of something, actually i'm just studying kotlin.
+A nice little app for listing something, actually i'm just studying kotlin.
 
-Using:
-Kotlin
-Android SDK
-Coroutines
-Dependency Injection (Dagger 2)
-Room Database
+---------------------------------------------------------------------------
+
+The project implements:
+Kotlin;
+Android SDK;
+RxJava;
+Dependency Injection (Dagger 2);
+Room Database;
+Material2;
+Android Jetpack (navigation, binging);
+MVVM architecture (with heavy dagger influence).
