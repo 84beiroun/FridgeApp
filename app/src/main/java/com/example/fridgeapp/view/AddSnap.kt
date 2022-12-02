@@ -1,7 +1,9 @@
 package com.example.fridgeapp.view
 
+import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -11,10 +13,12 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
@@ -59,34 +63,53 @@ class AddSnap : Fragment() {
         FridgeApp.dbInstance.inject(this)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        sysImageSelector()
-        val menuHost: MenuHost = requireActivity()
-        menuHost.addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menu.clear()
-                menuInflater.inflate(R.menu.menu_add, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                //здесь буквально нет ничего
-                return false
-            }
-        })
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAddSnapBinding.inflate(inflater, container, false)
 
-        binding.imagePickerButton.setOnClickListener { selectImage() }
+        binding.imagePickerButton.setOnClickListener {
+            if ((ContextCompat.checkSelfPermission(
+                    context!!, Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED)
+            )
+                selectImage()
+            else requestPermissions(
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ), 0
+            )
+        }
         binding.saveSnapButton.setOnClickListener { toSave() }
 
+        sysImageSelector()
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        menuSetup()
+    }
+
+
+    private fun menuSetup() {
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                    menu.clear()
+                    menuInflater.inflate(R.menu.menu_add, menu)
+                }
+
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                    //здесь буквально нет ничего
+                    return false
+                }
+            }, viewLifecycleOwner, Lifecycle.State.RESUMED
+        )
+    }
 
     private fun toSave() {
         if (binding.snapTitleInput.text!!.isNotEmpty()) {
@@ -106,27 +129,23 @@ class AddSnap : Fragment() {
                     image = actualImage.toString()
                 )
             ).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe({
-                    Log.d(
-                        "ITEM_ADD",
-                        "Item (name = ${binding.snapTitleInput.text}) has been updated"
-                    )
-                    findNavController().popBackStack()
-                    Toast.makeText(
-                        this@AddSnap.context,
-                        getString(R.string.item_add_successful),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }, { error ->
-                    Log.d(
-                        "ERROR",
-                        "Cannot add item (name = ${binding.snapTitleInput.text}). Code: $error"
-                    )
-                    Toast.makeText(
-                        this@AddSnap.context,
-                        getString(R.string.item_add_failed),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                })
+                Log.d(
+                    "ITEM_ADD", "Item (name = ${binding.snapTitleInput.text}) has been updated"
+                )
+                findNavController().popBackStack()
+                Toast.makeText(
+                    this@AddSnap.context,
+                    getString(R.string.item_add_successful),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }, { error ->
+                Log.d(
+                    "ERROR", "Cannot add item (name = ${binding.snapTitleInput.text}). Code: $error"
+                )
+                Toast.makeText(
+                    this@AddSnap.context, getString(R.string.item_add_failed), Toast.LENGTH_SHORT
+                ).show()
+            })
 
 
         }
@@ -162,14 +181,18 @@ class AddSnap : Fragment() {
 
 
     private fun selectImage() {
-        val options = arrayOf<CharSequence>("Take Photo", "Pick from Gallery", "Cancel")
+        val options = arrayOf<CharSequence>(
+            getString(R.string.alert_option_new_photo),
+            getString(R.string.alert_option_pick_from_gallery),
+            getString(R.string.alert_option_cancel)
+        )
         val alertBuilder = AlertDialog.Builder(this.context)
-        alertBuilder.setTitle("Choose a picture")
+        alertBuilder.setTitle(getString(R.string.alert_box_title))
 
         alertBuilder.setItems(options) { dialogInterface, item ->
 
-            when (options[item]) {
-                "Take Photo" -> {
+            when (item) {
+                0 -> {
                     actualImage = this.context?.let { it1 ->
                         FileProvider.getUriForFile(
                             it1, BuildConfig.APPLICATION_ID + ".provider", createImageFile()
@@ -177,12 +200,12 @@ class AddSnap : Fragment() {
                     }
                     takenImage?.launch(actualImage)
                 }
-                "Pick from Gallery" -> pickedImage?.launch(
+                1 -> pickedImage?.launch(
                     PickVisualMediaRequest(
                         ActivityResultContracts.PickVisualMedia.ImageOnly
                     )
                 )
-                "Cancel" -> dialogInterface.dismiss()
+                2 -> dialogInterface.dismiss()
             }
         }
         alertBuilder.show()
@@ -208,29 +231,5 @@ class AddSnap : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
-
-    // private fun multiIntentHanlder() {
-    //     multiIntent = registerForActivityResult(
-//            ActivityResultContracts.StartActivityForResult()
-//        ) { result: ActivityResult ->
-//            if (result.resultCode == Activity.RESULT_OK) {
-//                Log.d("sda", result.data.toString())
-//            }
-//        }
-    //   }
-
-    //   private fun intentSelectImage(){
-    // методы вызова камеры / выбора из галлереи
-//            takenImage?.launch(actualImage)
-//            pickedImage?.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-    // попытка реализации интентов, много косяков.
-//            val fileSourceIntent = Intent(Intent.ACTION_GET_CONTENT).setType("image/*")
-//            val imageSourceIntent = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI).setType("image/*")
-//            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//            val intentChooser = Intent.createChooser(takePictureIntent, "Pick image source")
-//            intentChooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(imageSourceIntent, fileSourceIntent))
-//            multiIntent?.launch(intentChooser)
-    //   }
 
 }

@@ -1,8 +1,10 @@
 package com.example.fridgeapp.view
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -13,12 +15,14 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
@@ -60,55 +64,8 @@ class CardExpanded : Fragment() {
         //получаем инфу с навигатора (safeargs)
         fridgeSnap = CardExpandedArgs.fromBundle(requireArguments()).fridgeSnap
 
-        //хэндлим обращение к андройду, загрузка картинок
-        sysImageSelector()
-
-        val menuHost: MenuHost = requireActivity()
-        menuHost.addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.menu_snap, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                return when (menuItem.itemId) {
-                    R.id.snap_edit -> {
-                        //функция анлока полей
-                        fieldsUnlockHandler()
-                        true
-                    }
-                    R.id.delete_snap -> {
-                        snapsRepository.deleteSnap(fridgeSnap?.id!!)
-                            .observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io())
-                            .subscribe({
-                                Log.d(
-                                    "ITEM_DELETE",
-                                    "Item (name = ${fridgeSnap?.title!!}) has been deleted"
-                                )
-                                findNavController().popBackStack()
-                                Toast.makeText(
-                                    this@CardExpanded.context,
-                                    getString(R.string.item_delete_successful),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }, { error ->
-                                Log.d(
-                                    "ERROR",
-                                    "Cannot delete item (name = ${fridgeSnap?.title!!}). Code: $error"
-                                )
-                                Toast.makeText(
-                                    this@CardExpanded.context,
-                                    getString(R.string.item_delete_failed),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            })
-                        true
-                    }
-                    else -> false
-                }
-            }
-
-        })
     }
+
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -140,14 +97,83 @@ class CardExpanded : Fragment() {
             }
             //функция обновления инфы в бд
             toUpdate()
+
         }
 
         //хэндлим кнопку смены картинки
-        binding.changeImageTxt.setOnClickListener { selectImage() }
+        binding.changeImageTxt.setOnClickListener {
+            if ((ContextCompat.checkSelfPermission(
+                    context!!, Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED)
+            ) selectImage()
+            else requestPermissions(
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ), 0
+            )
+        }
+
+        //хэндлим обращение к андройду, загрузка картинок
+        sysImageSelector()
+
+        //инит меню
+        menuSetup()
 
         return binding.root
     }
 
+
+    private fun menuSetup() {
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                    menu.clear()
+                    menuInflater.inflate(R.menu.menu_snap, menu)
+                }
+
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                    return when (menuItem.itemId) {
+                        R.id.snap_edit -> {
+                            //функция анлока полей
+                            fieldsUnlockHandler()
+                            true
+                        }
+                        R.id.delete_snap -> {
+                            snapsRepository.deleteSnap(fridgeSnap?.id!!)
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribeOn(Schedulers.io()).subscribe({
+                                    Log.d(
+                                        "ITEM_DELETE",
+                                        "Item (name = ${fridgeSnap?.title!!}) has been deleted"
+                                    )
+                                    findNavController().popBackStack()
+                                    Toast.makeText(
+                                        this@CardExpanded.context,
+                                        getString(R.string.item_delete_successful),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }, { error ->
+                                    Log.d(
+                                        "ERROR",
+                                        "Cannot delete item (name = ${fridgeSnap?.title!!}). Code: $error"
+                                    )
+                                    Toast.makeText(
+                                        this@CardExpanded.context,
+                                        getString(R.string.item_delete_failed),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                })
+                            true
+                        }
+                        else -> false
+                    }
+                }
+
+            }, viewLifecycleOwner, Lifecycle.State.RESUMED
+        )
+    }
 
     private fun toUpdate() {
         if (binding.snapTitleOutput.text != null) {
@@ -270,20 +296,23 @@ class CardExpanded : Fragment() {
         binding.changeImageTxt.isVisible = true
         binding.changeImageTxt.isEnabled = true
 
-        Log.d("sdsd", fridgeSnap.toString())
         if (fridgeSnap?.comment == "default_comment_line") binding.snapCommentOutput.text = null
     }
 
     //метод выбора действия
     private fun selectImage() {
-        val options =
-            arrayOf<CharSequence>("Take Photo", "Pick from Gallery", "Set Default", "Cancel")
+        val options = arrayOf<CharSequence>(
+            getString(R.string.alert_option_new_photo),
+            getString(R.string.alert_option_pick_from_gallery),
+            getString(R.string.alert_option_set_default),
+            getString(R.string.alert_option_cancel)
+        )
         val alertBuilder = AlertDialog.Builder(this.context)
-        alertBuilder.setTitle("Choose a picture")
+        alertBuilder.setTitle(getString(R.string.alert_box_title))
 
         alertBuilder.setItems(options) { dialogInterface, item ->
-            when (options[item]) {
-                "Take Photo" -> {
+            when (item) {
+                0 -> {
                     takenImage?.launch(actualImage)
                     actualImage = this.context?.let { it1 ->
                         FileProvider.getUriForFile(
@@ -291,16 +320,16 @@ class CardExpanded : Fragment() {
                         )
                     }
                 }
-                "Pick from Gallery" -> pickedImage?.launch(
+                1 -> pickedImage?.launch(
                     PickVisualMediaRequest(
                         ActivityResultContracts.PickVisualMedia.ImageOnly
                     )
                 )
-                "Set Default" -> {
+                2 -> {
                     actualImage = null
                     binding.snapImage.setImageResource(R.drawable.fridge_preview)
                 }
-                "Cancel" -> dialogInterface.dismiss()
+                3 -> dialogInterface.dismiss()
             }
         }
         alertBuilder.show()
