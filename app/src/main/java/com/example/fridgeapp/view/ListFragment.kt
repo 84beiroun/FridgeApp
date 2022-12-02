@@ -1,5 +1,6 @@
 package com.example.fridgeapp.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -54,7 +55,7 @@ class ListFragment : Fragment() {
         binding.fridgeItemsList.adapter = adapter
 
         val dividerItemDecoration = ItemsDivider(this@ListFragment.context, RecyclerView.VERTICAL)
-        dividerItemDecoration.setDrawable(ContextCompat.getDrawable(this@ListFragment.context!!, R.drawable.item_divider)!!)
+        dividerItemDecoration.setDrawable(ContextCompat.getDrawable(this@ListFragment.requireContext(), R.drawable.item_divider)!!)
         binding.fridgeItemsList.addItemDecoration(dividerItemDecoration)
 
         return binding.root
@@ -67,6 +68,7 @@ class ListFragment : Fragment() {
 
 
     //подписываемся на обновление листа
+    @SuppressLint("CheckResult")
     private fun subscribeOnList() {
         //получаем обзёрвабл лист записей через дао (репозиторий)
         val fridgeSnaps = snapsRepository.getAll()

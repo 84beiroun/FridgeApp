@@ -1,11 +1,13 @@
 package com.example.fridgeapp.view
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -103,7 +105,7 @@ class CardExpanded : Fragment() {
         //хэндлим кнопку смены картинки
         binding.changeImageTxt.setOnClickListener {
             if ((ContextCompat.checkSelfPermission(
-                    context!!, Manifest.permission.READ_EXTERNAL_STORAGE
+                    requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
                 ) == PackageManager.PERMISSION_GRANTED)
             ) selectImage()
             else requestPermissions(
@@ -175,6 +177,7 @@ class CardExpanded : Fragment() {
         )
     }
 
+    @SuppressLint("CheckResult")
     private fun toUpdate() {
         if (binding.snapTitleOutput.text != null) {
             val comment: String =
@@ -214,10 +217,10 @@ class CardExpanded : Fragment() {
     private fun fieldsInit() {
         binding.snapTitleOutput.setText(fridgeSnap?.title)
         if (fridgeSnap?.comment == "default_comment_line" || fridgeSnap?.comment?.length == 0) binding.snapCommentOutput.setText(
-            "No commentary was provided..."
+            getString(R.string.no_comments)
         )
         else binding.snapCommentOutput.setText(fridgeSnap?.comment)
-        if (fridgeSnap?.image != "null") binding.snapImage.setImageURI(fridgeSnap?.image?.toUri())
+        if (fridgeSnap?.image != "null" && Build.VERSION.SDK_INT < 32) binding.snapImage.setImageURI(fridgeSnap?.image?.toUri())
         else binding.snapImage.setImageResource(R.drawable.fridge_preview)
     }
 

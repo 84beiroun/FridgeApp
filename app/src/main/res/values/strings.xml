@@ -1,15 +1,34 @@
 <resources>
-    <string name="app_name">FridgeApp</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="app_name" translatable="false">FridgeApp</string>
     <string name="add_snap">Add Snap</string>
     <string name="your_commentary">Your commentary</string>
-    <string name="pick_photo">Pick photo</string>
+    <string name="pick_photo">Pick image</string>
     <string name="snap_title">Snap title</string>
     <string name="change_image">Change Image</string>
     <string name="edit_snap">Edit Snap</string>
-    <string name="first_launch_text">No items, as it seems...</string>
-    <string name="item_title_default">Item Title</string>
-    <string name="item_date_default">Item Date</string>
-    <string name="id_default">ID</string>
+    <string name="first_launch_text">No items, as it seems</string>
+    <string name="item_title_default" translatable="false">Item Title</string>
+    <string name="item_date_default" translatable="false">Item Date</string>
+    <string name="id_default" translatable="false">ID</string>
+    <string name="snap_image">Snap Image</string>
+    <string name="card_image_preview">Card Image Preview</string>
+    <string name="list_error_msg">Error. Code:</string>
+    <string name="item_add_successful">Item has been added!</string>
+    <string name="item_add_failed">Failed to add item!</string>
+    <string name="pick_media_failed">Media pick is failed!</string>
+    <string name="photo_take_failed">Photo take is failed!</string>
+    <string name="item_delete_successful">Item has been deleted!</string>
+    <string name="item_delete_failed">Failed to delete item!</string>
+    <string name="item_edit_successful">Item has been updated!</string>
+    <string name="item_edit_failed">Failed to update item!</string>
+    <string name="alert_option_new_photo">Take Photo</string>
+    <string name="alert_option_pick_from_gallery">Pick from Gallery</string>
+    <string name="alert_option_cancel">Cancel</string>
+    <string name="alert_option_set_default">Set Default</string>
+    <string name="alert_box_title">Choose a picture</string>
+    <string name="permission_storage">Please allow storage permission</string>
+    <string name="list">Snaps</string>
+    <string name="add_a_snap">Add a Snap</string>
+    <string name="fridge_snap">Fridge Snap</string>
+    <string name="no_comments">No commentary was provided</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.example.fridgeapp.handlers
 
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,7 +39,7 @@ class RecycleAdapter(private val snapsList: List<FridgeSnap>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val fridgeSnap = snapsList[position]
-        if (fridgeSnap.image != "null") holder.previewImage.setImageURI(fridgeSnap.image?.toUri())
+        if (fridgeSnap.image != "null" && Build.VERSION.SDK_INT < 32) holder.previewImage.setImageURI(fridgeSnap.image?.toUri())
         else holder.previewImage.setImageResource(R.drawable.fridge_small_preview)
 
         holder.cardTitle.text = fridgeSnap.title

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_snap">Добавить запись</string>
+    <string name="your_commentary">Комментарий</string>
+    <string name="pick_photo">Выбрать изображение</string>
+    <string name="snap_title">Заголовок</string>
+    <string name="change_image">Изменить изображение</string>
+    <string name="edit_snap">Редактировать запись</string>
+    <string name="first_launch_text">Пока здесь ничего нет</string>
+    <string name="snap_image">Изображение записи</string>
+    <string name="card_image_preview">Превью записи</string>
+    <string name="list_error_msg">Ошибка. Код:</string>
+    <string name="item_add_successful">Запись успешно добавлена!</string>
+    <string name="item_add_failed">Не вышло добавить запись!</string>
+    <string name="pick_media_failed">Не вышло выбрать изображение</string>
+    <string name="photo_take_failed">Не вышло сделать фото</string>
+    <string name="item_delete_successful">Запись была удалена!</string>
+    <string name="item_delete_failed">Не вышло удалить запись!</string>
+    <string name="item_edit_successful">Запись была обновлена!</string>
+    <string name="item_edit_failed">Не вышло обновить запись!</string>
+    <string name="alert_option_new_photo">Сделать фото</string>
+    <string name="alert_option_pick_from_gallery">Выбрать из галереи</string>
+    <string name="alert_option_cancel">Отмена</string>
+    <string name="alert_option_set_default">Установить по умолчанию</string>
+    <string name="alert_box_title">Выберите изображение</string>
+    <string name="permission_storage">Пожалуйста дайте разрешение на запись</string>
+    <string name="list">Записи</string>
+    <string name="add_a_snap">Добавить запись</string>
+    <string name="fridge_snap">Запись</string>
+    <string name="no_comments">Нет коментария</string>
+</resources>

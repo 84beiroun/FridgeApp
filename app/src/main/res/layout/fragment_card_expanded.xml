@@ -49,10 +49,12 @@
                 <ImageView
                     android:id="@+id/snap_image"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
+                    android:layout_height="400dp"
+                    android:minHeight="350dp"
                     android:background="#0f0f0f0f"
                     android:padding="1dp"
-                    android:src="@drawable/fridge_preview" />
+                    android:src="@drawable/fridge_preview"
+                    android:contentDescription="@string/snap_image" />
 
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -64,7 +66,8 @@
                     android:hint="@string/your_commentary"
                     android:inputType="text|textMultiLine"
                     android:maxLines="6"
-                    android:scrollbars="vertical">
+                    android:scrollbars="vertical"
+                    android:layout_marginBottom="20dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/snap_comment_output"

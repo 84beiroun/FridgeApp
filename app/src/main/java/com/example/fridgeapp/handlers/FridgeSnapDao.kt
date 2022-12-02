@@ -4,7 +4,6 @@ import androidx.room.*
 import com.example.fridgeapp.data.FridgeSnap
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.reactivex.Observable
 
 //оригинальная dao
 @Dao

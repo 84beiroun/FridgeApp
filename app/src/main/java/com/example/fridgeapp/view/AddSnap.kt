@@ -1,10 +1,12 @@
 package com.example.fridgeapp.view
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -70,17 +72,27 @@ class AddSnap : Fragment() {
         _binding = FragmentAddSnapBinding.inflate(inflater, container, false)
 
         binding.imagePickerButton.setOnClickListener {
-            if ((ContextCompat.checkSelfPermission(
-                    context!!, Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED)
-            )
-                selectImage()
-            else requestPermissions(
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ), 0
-            )
+            if (Build.VERSION.SDK_INT < 29) {
+                if ((ContextCompat.checkSelfPermission(
+                        requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED)
+                ) selectImage()
+                else requestPermissions(
+                    arrayOf(
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ), 0
+                )
+            } else {
+                if ((ContextCompat.checkSelfPermission(
+                        requireContext(), Manifest.permission.READ_MEDIA_IMAGES
+                    ) == PackageManager.PERMISSION_GRANTED)
+                ) selectImage()
+                else
+                    Toast.makeText(
+                    this@AddSnap.context, getString(R.string.permission_storage), Toast.LENGTH_LONG
+                ).show()
+            }
         }
         binding.saveSnapButton.setOnClickListener { toSave() }
 
@@ -111,6 +123,7 @@ class AddSnap : Fragment() {
         )
     }
 
+    @SuppressLint("CheckResult")
     private fun toSave() {
         if (binding.snapTitleInput.text!!.isNotEmpty()) {
             var commentText = binding.snapCommentInput.text.toString()
@@ -200,7 +213,8 @@ class AddSnap : Fragment() {
                     }
                     takenImage?.launch(actualImage)
                 }
-                1 -> pickedImage?.launch(
+                1 ->
+                    pickedImage?.launch(
                     PickVisualMediaRequest(
                         ActivityResultContracts.PickVisualMedia.ImageOnly
                     )
