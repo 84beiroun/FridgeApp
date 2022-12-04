@@ -5,11 +5,11 @@
 
     <item
         android:id="@+id/snap_edit"
-        android:title="Edit a Snap"
+        android:title="@string/edit_snap_option_menu"
         android:icon="@drawable/ic_baseline_edit_24" />
 
     <item
         android:id="@+id/delete_snap"
-        android:title="Delete a Snap" />
+        android:title="@string/delete_snap_option_menu" />
 
 </menu>

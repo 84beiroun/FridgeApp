@@ -1,42 +1,36 @@
 package com.example.fridgeapp.view
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
-import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
 import com.example.fridgeapp.data.FridgeSnap
 import com.example.fridgeapp.databinding.FragmentCardExpandedBinding
+import com.example.fridgeapp.handlers.FileSystemInteractor
 import com.example.fridgeapp.injector.repository.SnapsRepository
 import com.example.fridgeapp.loaders.FridgeApp
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 import javax.inject.Inject
 
 //раскрытая запись
@@ -45,18 +39,21 @@ class CardExpanded : Fragment() {
 
     private var _binding: FragmentCardExpandedBinding? = null
 
-    private var pickedImage: ActivityResultLauncher<PickVisualMediaRequest>? = null
 
-    private var takenImage: ActivityResultLauncher<Uri>? = null
+    private var imageUriToSave: Uri? = null
 
-    private var actualImage: Uri? = null
+    private lateinit var fileSystemInteractor: FileSystemInteractor
 
-    private lateinit var currentPhotoPath: String
+    private val uriLiveData = MutableLiveData<Uri?>()
+
+    private var permissionRequestLauncher: ActivityResultLauncher<Array<String>>? = null
 
     @Inject
     lateinit var snapsRepository: SnapsRepository
 
     private val binding get() = _binding!!
+
+    private val compositeDisposable = CompositeDisposable()
 
 
     //раскрытая запись очень похожа на создание новой, так как тут update, методы оттуда же перекочевали, делать интерфейс
@@ -66,6 +63,10 @@ class CardExpanded : Fragment() {
         //получаем инфу с навигатора (safeargs)
         fridgeSnap = CardExpandedArgs.fromBundle(requireArguments()).fridgeSnap
 
+        fileSystemInteractor = FileSystemInteractor(
+            requireActivity().activityResultRegistry, requireContext(), uriLiveData
+        )
+        lifecycle.addObserver(fileSystemInteractor)
     }
 
 
@@ -86,7 +87,7 @@ class CardExpanded : Fragment() {
         //функция лока полей
         immutableHandler()
 
-        actualImage = fridgeSnap?.image!!.toUri()
+        imageUriToSave = fridgeSnap?.image!!.toUri()
 
 
         binding.saveSnapEditButton.setOnClickListener {
@@ -104,20 +105,36 @@ class CardExpanded : Fragment() {
 
         //хэндлим кнопку смены картинки
         binding.changeImageTxt.setOnClickListener {
-            if ((ContextCompat.checkSelfPermission(
-                    requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED)
-            ) selectImage()
-            else requestPermissions(
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ), 0
-            )
+            if (fileSystemInteractor.permissionCheck()) sourceChooserAlert()
+            else {
+                if (Build.VERSION.SDK_INT < 33) {
+                    permissionRequestLauncher!!.launch(
+                        arrayOf(
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        )
+                    )
+                } else {
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        requireActivity(), Manifest.permission.READ_MEDIA_IMAGES
+                    )
+                    permissionRequestLauncher!!.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES))
+                }
+            }
         }
 
-        //хэндлим обращение к андройду, загрузка картинок
-        sysImageSelector()
+        permissionRequestLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+                run {
+                    val granted = permissions.entries.all {
+                        it.value
+                    }
+                    if (granted) {
+                        sourceChooserAlert()
+                    }
+                }
+            }
+
 
         //инит меню
         menuSetup()
@@ -151,20 +168,20 @@ class CardExpanded : Fragment() {
                                         "Item (name = ${fridgeSnap?.title!!}) has been deleted"
                                     )
                                     findNavController().popBackStack()
-                                    Toast.makeText(
-                                        this@CardExpanded.context,
+                                    Snackbar.make(
+                                        requireView(),
                                         getString(R.string.item_delete_successful),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                        Snackbar.LENGTH_LONG
+                                    ).setAction(getString(R.string.undo)) { deleteUndo() }.show()
                                 }, { error ->
                                     Log.d(
                                         "ERROR",
                                         "Cannot delete item (name = ${fridgeSnap?.title!!}). Code: $error"
                                     )
-                                    Toast.makeText(
-                                        this@CardExpanded.context,
+                                    Snackbar.make(
+                                        requireView(),
                                         getString(R.string.item_delete_failed),
-                                        Toast.LENGTH_SHORT
+                                        Snackbar.LENGTH_SHORT
                                     ).show()
                                 })
                             true
@@ -177,40 +194,44 @@ class CardExpanded : Fragment() {
         )
     }
 
-    @SuppressLint("CheckResult")
+    private fun deleteUndo() {
+        val disposable =
+            snapsRepository.insertSnap(fridgeSnap!!).observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io()).subscribe {
+                    Log.d("UNDO", "Complete Undo item deletion (id = ${fridgeSnap!!.id})")
+                }
+    }
+
     private fun toUpdate() {
         if (binding.snapTitleOutput.text != null) {
             val comment: String =
                 if (binding.snapCommentOutput.text != null) binding.snapCommentOutput.text.toString()
                 else "null"
-            snapsRepository.updateSnap(
+            val disposable = snapsRepository.updateSnap(
                 FridgeSnap(
                     id = fridgeSnap?.id!!,
                     date = fridgeSnap?.date,
                     time = fridgeSnap?.time,
                     title = binding.snapTitleOutput.text.toString(),
                     comment = comment,
-                    image = actualImage.toString()
+                    image = imageUriToSave.toString()
                 )
             ).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe({
                 Log.d(
                     "ITEM_UPDATE", "Item (name = ${fridgeSnap?.title!!}) has been updated"
                 )
-                Toast.makeText(
-                    this@CardExpanded.context,
-                    getString(R.string.item_edit_successful),
-                    Toast.LENGTH_SHORT
+                Snackbar.make(
+                    requireView(), getString(R.string.item_edit_successful), Snackbar.LENGTH_LONG
                 ).show()
             }, { error ->
                 Log.d(
                     "ERROR", "Cannot update item (name = ${fridgeSnap?.title!!}). Code: $error"
                 )
-                Toast.makeText(
-                    this@CardExpanded.context,
-                    getString(R.string.item_edit_failed),
-                    Toast.LENGTH_SHORT
+                Snackbar.make(
+                    requireView(), getString(R.string.item_edit_failed), Snackbar.LENGTH_SHORT
                 ).show()
             })
+            compositeDisposable.add(disposable)
         }
     }
 
@@ -220,42 +241,10 @@ class CardExpanded : Fragment() {
             getString(R.string.no_comments)
         )
         else binding.snapCommentOutput.setText(fridgeSnap?.comment)
-        if (fridgeSnap?.image != "null" && Build.VERSION.SDK_INT < 32) binding.snapImage.setImageURI(fridgeSnap?.image?.toUri())
+        if (fridgeSnap?.image != "null") binding.snapImage.setImageURI(fridgeSnap?.image?.toUri())
         else binding.snapImage.setImageResource(R.drawable.fridge_preview)
     }
 
-    private fun sysImageSelector() {
-        //контракт на выбор фото из галереи
-        pickedImage = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            if (uri != null) {
-                actualImage = uri
-                binding.snapImage.setImageURI(actualImage)
-            } else {
-                Log.d("ADD_SNAP", "Can't handle Pick Media")
-                Toast.makeText(
-                    this@CardExpanded.context,
-                    getString(R.string.pick_media_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-        //контракт нового фото
-        takenImage = registerForActivityResult(
-            ActivityResultContracts.TakePicture()
-        ) { code ->
-            if (code) {
-                binding.snapImage.setImageURI(actualImage)
-            } else {
-                Log.d("ADD_SNAP", "Can't handle Take Photo")
-                Toast.makeText(
-                    this@CardExpanded.context,
-                    getString(R.string.photo_take_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -303,7 +292,7 @@ class CardExpanded : Fragment() {
     }
 
     //метод выбора действия
-    private fun selectImage() {
+    private fun sourceChooserAlert() {
         val options = arrayOf<CharSequence>(
             getString(R.string.alert_option_new_photo),
             getString(R.string.alert_option_pick_from_gallery),
@@ -313,23 +302,23 @@ class CardExpanded : Fragment() {
         val alertBuilder = AlertDialog.Builder(this.context)
         alertBuilder.setTitle(getString(R.string.alert_box_title))
 
+        val observer = androidx.lifecycle.Observer<Uri?> { uri ->
+            binding.snapImage.setImageURI(uri)
+            imageUriToSave = uri
+        }
+
         alertBuilder.setItems(options) { dialogInterface, item ->
             when (item) {
                 0 -> {
-                    takenImage?.launch(actualImage)
-                    actualImage = this.context?.let { it1 ->
-                        FileProvider.getUriForFile(
-                            it1, BuildConfig.APPLICATION_ID + ".provider", createImageFile()
-                        )
-                    }
+                    uriLiveData.observe(viewLifecycleOwner, observer)
+                    fileSystemInteractor.takePhoto()
                 }
-                1 -> pickedImage?.launch(
-                    PickVisualMediaRequest(
-                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                    )
-                )
+                1 -> {
+                    uriLiveData.observe(viewLifecycleOwner, observer)
+                    fileSystemInteractor.selectImage()
+                }
                 2 -> {
-                    actualImage = null
+                    imageUriToSave = null
                     binding.snapImage.setImageResource(R.drawable.fridge_preview)
                 }
                 3 -> dialogInterface.dismiss()
@@ -338,18 +327,9 @@ class CardExpanded : Fragment() {
         alertBuilder.show()
     }
 
-    //создания файла в который потом сохраняться будет изображение
-    private fun createImageFile(): File {
-        // Create an image file name
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val storageDir: File? = context?.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-            "IMG_${timeStamp}_", /* prefix */
-            ".jpg", /* suffix */
-            storageDir /* directory */
-        ).apply {
-            // Save a file: path for use with ACTION_VIEW intents
-            currentPhotoPath = absolutePath
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.dispose()
     }
+
 }

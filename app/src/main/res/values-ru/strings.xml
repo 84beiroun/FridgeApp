@@ -28,4 +28,7 @@
     <string name="add_a_snap">Добавить запись</string>
     <string name="fridge_snap">Запись</string>
     <string name="no_comments">Нет коментария</string>
+    <string name="edit_snap_option_menu">Редактировать</string>
+    <string name="delete_snap_option_menu">Удалить</string>
+    <string name="undo">Отменить</string>
 </resources>

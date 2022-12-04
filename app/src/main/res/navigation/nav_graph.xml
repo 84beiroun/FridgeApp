@@ -7,8 +7,8 @@
     <fragment
         android:id="@+id/listFragment"
         android:name="com.example.fridgeapp.view.ListFragment"
-        android:label="Home"
-        tools:layout="@layout/fragment_list" >
+        android:label="@string/list"
+        tools:layout="@layout/fragment_list">
         <action
             android:id="@+id/action_listFragment_to_cardExpanded"
             app:destination="@id/cardExpanded"
@@ -23,8 +23,8 @@
     <fragment
         android:id="@+id/cardExpanded"
         android:name="com.example.fridgeapp.view.CardExpanded"
-        android:label="Fridge Snap"
-        tools:layout="@layout/fragment_card_expanded" >
+        android:label="@string/fridge_snap"
+        tools:layout="@layout/fragment_card_expanded">
         <action
             android:id="@+id/action_cardExpanded_to_listFragment"
             app:destination="@id/listFragment" />
@@ -35,8 +35,8 @@
     <fragment
         android:id="@+id/addSnap"
         android:name="com.example.fridgeapp.view.AddSnap"
-        android:label="Add a Snap"
-        tools:layout="@layout/fragment_add_snap" >
+        android:label="@string/add_a_snap"
+        tools:layout="@layout/fragment_add_snap">
         <action
             android:id="@+id/action_addSnap_to_listFragment"
             app:destination="@id/listFragment" />

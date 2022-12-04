@@ -20,6 +20,7 @@ import com.example.fridgeapp.handlers.RecycleAdapter
 import com.example.fridgeapp.injector.repository.SnapsRepository
 import com.example.fridgeapp.loaders.FridgeApp
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
@@ -35,6 +36,8 @@ class ListFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var adapter: RecycleAdapter? = null
+
+    private val compositeDisposable = CompositeDisposable()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -68,11 +71,10 @@ class ListFragment : Fragment() {
 
 
     //подписываемся на обновление листа
-    @SuppressLint("CheckResult")
     private fun subscribeOnList() {
         //получаем обзёрвабл лист записей через дао (репозиторий)
         val fridgeSnaps = snapsRepository.getAll()
-        fridgeSnaps
+        val disposable = fridgeSnaps
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(Schedulers.io())
             .subscribe({ response -> onListChange(response) }, { error ->
@@ -85,6 +87,7 @@ class ListFragment : Fragment() {
                     binding.firstLaunchText.text = getString(R.string.list_error_msg) + error
                 }
             })
+        compositeDisposable.add(disposable)
     }
 
     override fun onDestroyView() {
@@ -118,5 +121,10 @@ class ListFragment : Fragment() {
                 binding.loadingSpinner.visibility = View.INVISIBLE
                 binding.firstLaunchText.visibility = View.VISIBLE
             }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable!!.dispose()
     }
 }

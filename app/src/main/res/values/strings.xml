@@ -31,4 +31,7 @@
     <string name="add_a_snap">Add a Snap</string>
     <string name="fridge_snap">Fridge Snap</string>
     <string name="no_comments">No commentary was provided</string>
+    <string name="edit_snap_option_menu">Edit a Snap</string>
+    <string name="delete_snap_option_menu">Delete a Snap</string>
+    <string name="undo">Undo</string>
 </resources>

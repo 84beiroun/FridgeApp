@@ -1,40 +1,34 @@
 package com.example.fridgeapp.view
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.view.*
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
-import com.example.fridgeapp.BuildConfig
 import com.example.fridgeapp.R
 import com.example.fridgeapp.data.FridgeSnap
 import com.example.fridgeapp.databinding.FragmentAddSnapBinding
+import com.example.fridgeapp.handlers.FileSystemInteractor
 import com.example.fridgeapp.injector.repository.SnapsRepository
 import com.example.fridgeapp.loaders.FridgeApp
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import java.io.File
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 import javax.inject.Inject
 
 //здесь ничего интересного, можно почитать комментарии из открытой записи (CardExpanded.kt), там всё то же самое
@@ -50,19 +44,27 @@ class AddSnap : Fragment() {
 
     private val binding get() = _binding!!
 
-    private var pickedImage: ActivityResultLauncher<PickVisualMediaRequest>? = null
+    private var permissionRequestLauncher: ActivityResultLauncher<Array<String>>? = null
 
-    private var takenImage: ActivityResultLauncher<Uri>? = null
+    private var imageUriToSave: Uri? = null
 
-    //  private var multiIntent: ActivityResultLauncher<Intent>? = null
+    private lateinit var fileSystemInteractor: FileSystemInteractor
 
-    private var actualImage: Uri? = null
+    private val uriLiveData = MutableLiveData<Uri?>()
 
-    private lateinit var currentPhotoPath: String
+    private val compositeDisposable = CompositeDisposable()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         FridgeApp.dbInstance.inject(this)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        fileSystemInteractor = FileSystemInteractor(
+            requireActivity().activityResultRegistry, requireContext(), uriLiveData
+        )
+        lifecycle.addObserver(fileSystemInteractor)
     }
 
 
@@ -72,33 +74,41 @@ class AddSnap : Fragment() {
         _binding = FragmentAddSnapBinding.inflate(inflater, container, false)
 
         binding.imagePickerButton.setOnClickListener {
-            if (Build.VERSION.SDK_INT < 29) {
-                if ((ContextCompat.checkSelfPermission(
-                        requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED)
-                ) selectImage()
-                else requestPermissions(
-                    arrayOf(
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ), 0
-                )
-            } else {
-                if ((ContextCompat.checkSelfPermission(
-                        requireContext(), Manifest.permission.READ_MEDIA_IMAGES
-                    ) == PackageManager.PERMISSION_GRANTED)
-                ) selectImage()
-                else
-                    Toast.makeText(
-                    this@AddSnap.context, getString(R.string.permission_storage), Toast.LENGTH_LONG
-                ).show()
+            if (fileSystemInteractor.permissionCheck()) sourceChooserAlert()
+            else {
+                if (Build.VERSION.SDK_INT < 33) {
+                    permissionRequestLauncher!!.launch(
+                        arrayOf(
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        )
+                    )
+                } else {
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        requireActivity(), Manifest.permission.READ_MEDIA_IMAGES
+                    )
+                    permissionRequestLauncher!!.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES))
+                }
             }
         }
+
+        permissionRequestLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+                run {
+                    val granted = permissions.entries.all {
+                        it.value
+                    }
+                    if (granted) {
+                        sourceChooserAlert()
+                    }
+                }
+            }
+
         binding.saveSnapButton.setOnClickListener { toSave() }
 
-        sysImageSelector()
         return binding.root
     }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -123,12 +133,11 @@ class AddSnap : Fragment() {
         )
     }
 
-    @SuppressLint("CheckResult")
     private fun toSave() {
         if (binding.snapTitleInput.text!!.isNotEmpty()) {
             var commentText = binding.snapCommentInput.text.toString()
             if (commentText.isEmpty()) commentText = "default_comment_line"
-            snapsRepository.insertSnap(
+            val disposable = snapsRepository.insertSnap(
                 FridgeSnap(
                     id = 0,
                     title = binding.snapTitleInput.text.toString(),
@@ -139,61 +148,34 @@ class AddSnap : Fragment() {
                     date = LocalDateTime.now().format(
                         DateTimeFormatter.ofPattern("dd MMM")
                     ),
-                    image = actualImage.toString()
+                    image = imageUriToSave.toString()
                 )
             ).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe({
                 Log.d(
-                    "ITEM_ADD", "Item (name = ${binding.snapTitleInput.text}) has been updated"
+                    "ITEM_ADD", "Item (name = ${binding.snapTitleInput.text}) has been added"
                 )
                 findNavController().popBackStack()
-                Toast.makeText(
-                    this@AddSnap.context,
+                Snackbar.make(
+                    requireView(),
                     getString(R.string.item_add_successful),
-                    Toast.LENGTH_SHORT
+                    Snackbar.LENGTH_LONG
                 ).show()
             }, { error ->
                 Log.d(
                     "ERROR", "Cannot add item (name = ${binding.snapTitleInput.text}). Code: $error"
                 )
-                Toast.makeText(
-                    this@AddSnap.context, getString(R.string.item_add_failed), Toast.LENGTH_SHORT
+                Snackbar.make(
+                    requireView(), getString(R.string.item_add_failed), Snackbar.LENGTH_SHORT
                 ).show()
             })
 
 
-        }
-    }
-
-    private fun sysImageSelector() {
-        pickedImage = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            if (uri != null) {
-                actualImage = uri
-                binding.snapImagePreview.setImageURI(actualImage)
-            } else {
-                Log.d("ADD_SNAP", "Can't handle Pick Media")
-                Toast.makeText(
-                    this@AddSnap.context, getString(R.string.pick_media_failed), Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-        takenImage = registerForActivityResult(
-            ActivityResultContracts.TakePicture()
-        ) { code ->
-            if (code) {
-                Log.d("path", actualImage.toString())
-                binding.snapImagePreview.setImageURI(actualImage)
-            } else {
-                Log.d("ADD_SNAP", "Can't handle Take Photo")
-                Toast.makeText(
-                    this@AddSnap.context, getString(R.string.photo_take_failed), Toast.LENGTH_SHORT
-                ).show()
-            }
+            compositeDisposable.add(disposable)
         }
     }
 
 
-    private fun selectImage() {
+    private fun sourceChooserAlert() {
         val options = arrayOf<CharSequence>(
             getString(R.string.alert_option_new_photo),
             getString(R.string.alert_option_pick_from_gallery),
@@ -202,48 +184,33 @@ class AddSnap : Fragment() {
         val alertBuilder = AlertDialog.Builder(this.context)
         alertBuilder.setTitle(getString(R.string.alert_box_title))
 
-        alertBuilder.setItems(options) { dialogInterface, item ->
+        val observer = androidx.lifecycle.Observer<Uri?> { uri ->
+            binding.snapImagePreview.setImageURI(uri)
+            imageUriToSave = uri
+        }
 
+        alertBuilder.setItems(options) { dialogInterface, item ->
             when (item) {
                 0 -> {
-                    actualImage = this.context?.let { it1 ->
-                        FileProvider.getUriForFile(
-                            it1, BuildConfig.APPLICATION_ID + ".provider", createImageFile()
-                        )
-                    }
-                    takenImage?.launch(actualImage)
+                    uriLiveData.observe(viewLifecycleOwner, observer)
+                    fileSystemInteractor.takePhoto()
                 }
-                1 ->
-                    pickedImage?.launch(
-                    PickVisualMediaRequest(
-                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                    )
-                )
+                1 -> {
+                    uriLiveData.observe(viewLifecycleOwner, observer)
+                    fileSystemInteractor.selectImage()
+
+                }
                 2 -> dialogInterface.dismiss()
             }
         }
         alertBuilder.show()
-
-    }
-
-    private fun createImageFile(): File {
-        // Create an image file name
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val storageDir: File? = context?.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-            "IMG_${timeStamp}_", /* prefix */
-            ".jpg", /* suffix */
-            storageDir /* directory */
-        ).apply {
-            // Save a file: path for use with ACTION_VIEW intents
-            currentPhotoPath = absolutePath
-        }
     }
 
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        compositeDisposable.dispose()
     }
 
 }

@@ -39,11 +39,10 @@ class RecycleAdapter(private val snapsList: List<FridgeSnap>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val fridgeSnap = snapsList[position]
-        if (fridgeSnap.image != "null" && Build.VERSION.SDK_INT < 32) holder.previewImage.setImageURI(fridgeSnap.image?.toUri())
+        if (fridgeSnap.image != "null") holder.previewImage.setImageURI(fridgeSnap.image?.toUri())
         else holder.previewImage.setImageResource(R.drawable.fridge_small_preview)
 
         holder.cardTitle.text = fridgeSnap.title
-       // holder.cardID.text = (fridgeSnap.id + 1).toString()
         holder.cardID.text = (position + 1).toString()
         holder.cardDate.text = fridgeSnap.date + " " + fridgeSnap.time
     }
